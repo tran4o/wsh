@@ -28,17 +28,20 @@ function exec(args)
 		var clientCode = undefined;
 		var dataMode = false;
 		socket.on("disconnect", function() {
-			console.log(">>> SOCKET.io disconnected ");
+			console.log(">>> SOCKET.io disconnected "+clientCode);
 			if (clientCode) 
 			{
 				var toDel=[];
-				for (var i in channels) if (channels[i].code == clientCode) toDel.push(i); 
+				for (var i in channels) if (channels[i].code == clientCode) toDel.push(i);
+				console.log("TODEL : ",toDel);
 				for (var i in toDel) 
 				{
 					var rc=channels[toDel[i]];
 					var channel = rc.channel;
+					console.log("DEL CHANNEL "+channel);
 					processSync(function(onDone) 
 					{
+						console.log("DEL CHANNEL SEND CLIENT DISCONNECT!");
 						semit(rc.socket,"client-disconnect",{channel:channel},function onD(r) {
 							console.log(" >> SENT CLIENT-DISCONNECT to CHANNEL "+channel);
 							r();
