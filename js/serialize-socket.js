@@ -1,6 +1,7 @@
 module.exports = function(socket,msgcode,data,onDone) {
 	if (!socket._queue) {
 		socket._queue=[];
+		socket._working=false;
 	}
 	socket._queue.push({msgcode:msgcode,data:data,onDone:onDone});
 	//console.log({msgcode:msgcode,data:data});

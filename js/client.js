@@ -129,6 +129,8 @@ function exec(args)
 			s.destroy();
 		}
 		sockets={};
+		delete socket._queue; //process-sync.js
+		delete socket.queue; // seralize-socket.js
 	});
 }
 exports.exec=exec;
