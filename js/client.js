@@ -55,7 +55,7 @@ function exec(args)
 				csock.on("data",function(data) {
 					processSync(function(onDone) {
 						semit(socket,"client-data",{data:data,channel:channel},onDone);
-					});
+					},socket);
 				});
 				csock.on("close",function() {
 					processSync(function(onDone) {
@@ -64,7 +64,7 @@ function exec(args)
 							delete sockets[channel];
 						}
 						onDone();
-					});
+					},socket);
 				});
 				csock.on("error",function(err) {
 					if (!onDoneCalled) {onDoneCalled=true;onDone();}
@@ -74,9 +74,9 @@ function exec(args)
 							semit(socket,"client-disconnect",{channel:channel},onDone);
 							delete sockets[channel];
 						}
-					});
+					},socket);
 				});
-			});
+			},socket);
 		} finally {
 			fn();
 		}
@@ -90,7 +90,7 @@ function exec(args)
 					s.destroy();
 				}
 				onDone();
-			});
+			},socket);
 		} finally {
 			fn();
 		}
@@ -103,7 +103,7 @@ function exec(args)
 				if (s)
 					s.write(data.data);
 				onDone();
-			});
+			},socket);
 		} finally {
 			fn();
 		}
@@ -113,13 +113,13 @@ function exec(args)
 		console.log(">> SOCKET CONNECT!!!")
 		processSync(function(onDone) {
 			semit(socket,"client-register",{code:code},onDone);
-		});
+		},socket);
 	});
 	socket.on("reconnect",function() {
 		console.log(">> SOCKET RECONNECTED!!!")
-		processSync(function(onDone) {
+		/*processSync(function(onDone) {
 			semit(socket,"client-register",{code:code},onDone);
-		});
+		},socket);*/
 	});
 	//--------------------------------
 	socket.on("disconnect",function() {
@@ -131,7 +131,7 @@ function exec(args)
 			}
 			sockets={};
 			onDone();
-		});*/
+		},socket);*/
 	});
 }
 exports.exec=exec;

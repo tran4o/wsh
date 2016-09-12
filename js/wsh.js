@@ -77,7 +77,7 @@ socket.on("connect",function()
 						return onDone();
 					delete sockets[channel];
 					semit(socket,"wsh-disconnect",{channel:channel},onDone);
-				});
+				},socket);
 			});
 			sock.on("error",function(err) {
 				processSync(function(onDone) {
@@ -88,12 +88,12 @@ socket.on("connect",function()
 					delete sockets[channel];
 					s.destroy();
 					onDone();
-				});
+				},socket);
 			});
 			sock.on("data",function(data) {
 				processSync(function(onDone) {
 					semit(socket,"wsh-data",{data:data,channel:channel},onDone);
-				});
+				},socket);
 			});
 		}).listen(port, "localhost");
 	}
@@ -108,7 +108,7 @@ socket.on("client-disconnect",function(data,fn) {
 			delete sockets[data.channel];;
 			s.destroy();
 			onDone();
-		});
+		},socket);
 	} finally {
 		fn();
 	}
@@ -122,7 +122,7 @@ socket.on("client-data",function(data,fn) {
 				return onDone();
 			s.write(data.data);
 			onDone();
-		});
+		},socket);
 	} finally {
 		fn();
 	}
