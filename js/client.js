@@ -126,7 +126,7 @@ function exec(args)
 		console.log(">> SOCKET DISCONNECT!!!")
 		for (var i in sockets) {
 			var s = sockets[i];
-			client.destroy();
+			s.destroy();
 		}
 		sockets={};
 		onDone();
