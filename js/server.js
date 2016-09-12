@@ -37,6 +37,7 @@ function exec(args)
 			clientCode=data.code;			
 			sockets[data.code]={socket:socket,seq:sseq++,code:data.code};
 			socket.emit(data.__code,{ok:1});
+			console.log("Client-Registered with "+JSON.stringify(sockets[data.code]))
 		});
 		socket.on('disconnect', function() {
 			if (clientCode) {
@@ -72,12 +73,18 @@ function exec(args)
 			}
 		});		
 		socket.on("wsh-connect",function(data) {
-			if (!data.channel)
-				return socket.emit(data.__code,{err:"channel not defined!"});
-			if (!data.code)
-				return socket.emit(data.__code,{err:"code not defined!"});
-			if (!sockets[data.code]) 
-				return socket.emit(data.__code,{err:"not connected"});
+			
+			console.log("WSH-CONNECT : "+JSON.stringify(data));
+			if (!data.channel || !data.code)
+				return;
+			if (!sockets[data.code]) {
+				console.error("ERROR in wsh-connect : sockets[data.code] not defined ("+data.code+")");
+				var c = channels[data.channel];
+				if (!c)
+					return;
+				c.socket.emit("wsh-disconnect",{});
+				return;	// ERROR NOT AVAILILABLE
+			}
 			channels[channel]={socket:socket,forwardTo:sockets[data.code],channel:channel,code:data.code};
 			sockets[data.code].emit("wsh-connect",{channel:channel});
 		});		
@@ -105,5 +112,6 @@ function exec(args)
 		});
 	});
 	//------------------------------------------------
+	server.listen(port);
 }
 exports.exec=exec;

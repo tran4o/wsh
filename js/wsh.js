@@ -26,7 +26,7 @@ exports.args=args;
 function usage() {
 	console.log("USAGE : ");
 	console.log("wsh server [port DEF 4000]");
-	console.log("wsh client [server DEF dev2-bg.plan-vision.com:4000]");
+	console.log("wsh client CODE [server DEF dev2-bg.plan-vision.com:4000]");
 	coneole.log("\nThen : wsh <CODE> [local_port DEF 1234]\nExample : wsh BUS0001 2323)");
 }
 if (!args.length)  {
