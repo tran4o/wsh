@@ -32,7 +32,6 @@ function exec(args)
 			{
 				var toDel=[];
 				for (var i in channels) if (channels[i].code == socket.clientCode) toDel.push(i);
-				console.log("TODEL : ",toDel);
 				for (var i in toDel) 
 				{
 					var rc=channels[toDel[i]];
@@ -40,7 +39,6 @@ function exec(args)
 					console.log("DEL CHANNEL SEND CLIENT DISCONNECT!");
 					semit(rc.socket,"client-disconnect",{channel:channel},function onD() {
 						console.log(" >> SENT CLIENT-DISCONNECT to CHANNEL "+channel);
-						onDone();
 					});						
 					delete channels[toDel[i]];
 				}
