@@ -29,14 +29,10 @@ function exec(args)
 	var sockets={};
 
 	//--------------------------
-	socket.on("connect_error",function() {
-		console.log("CONNECT_ERROR!");
-	});
-	socket.on("reconnect_failed",function() {
-		console.log("RECONNECT FAILED!");
+	socket.on("error",function(err) {
+		console.log("CONNECT_ERROR! : err");
 	});
 	//--------------------------
-	
 	socket.on("wsh-connect",function(data,fn) 
 	{
 		try 
