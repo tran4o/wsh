@@ -123,14 +123,15 @@ function exec(args)
 	});
 	//--------------------------------
 	socket.on("disconnect",function() {
-		processSync(function(onDone) {
+		console.log(">> SOCKET DISCONNECT!!!")
+		/*processSync(function(onDone) {
 			for (var i in sockets) {
 				var s = sockets[i];
 				client.destroy();
 			}
 			sockets={};
 			onDone();
-		});
+		});*/
 	});
 }
 exports.exec=exec;

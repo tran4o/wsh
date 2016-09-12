@@ -30,7 +30,8 @@ function exec(args)
 		var clientCode = undefined;
 		var dataMode = false;
 		socket.on('disconnect', function() {
-			processSync(function(onDone) {
+			console.log(">>> SOCKET.io disconnected ");
+			/*processSync(function(onDone) {
 				if (clientCode) {
 					if (connections[clientCode])
 					for (var i in connections[clientCode])
@@ -55,7 +56,7 @@ function exec(args)
 				channels={};
 				for (var i in listeners) socket.removeListener(listeners[i]);
 				listeners=[];
-			},socket);
+			},socket);*/
 		});
 		//---------------------------------------------------------------------------------
 		socket.on("wsh-connect",function(data,fn) {
