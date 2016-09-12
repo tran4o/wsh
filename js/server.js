@@ -56,7 +56,7 @@ function exec(args)
 						var c = channels[data.channel];
 						if (!c)
 							return onDone();
-						semit(c.socket,"wsh-disconnect",{channel:channel},onDone);
+						semit(c.socket,"client-disconnect",{channel:channel},onDone);
 						return;	// ERROR NOT AVAILILABLE
 					}
 					channels[channel]={socket:socket,forwardTo:sockets[data.code],channel:channel,code:data.code};
