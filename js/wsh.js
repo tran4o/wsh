@@ -127,3 +127,14 @@ socket.on("client-data",function(data,fn) {
 		fn();
 	}
 });
+
+socket.on("disconnect",function() {
+	console.log(">> SOCKET DISCONNECT!!!")
+	for (var i in sockets) {
+		var s = sockets[i];
+		s.destroy();
+	}
+	sockets={};
+	delete socket._queue; //process-sync.js
+	delete socket.queue; // seralize-socket.js
+});
