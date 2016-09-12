@@ -67,7 +67,7 @@ socket.on("connect",function()
 		doneS=1;
 		net.createServer(function(sock) 
 		{
-			console.log("Listen to "+port)
+			console.log("Connected on "+port)
 			var channel = (new Date()).getTime();
 			semit(socket,"wsh-connect",{code:code,channel:channel});
 			sockets[channel]=sock;
@@ -101,13 +101,16 @@ socket.on("connect",function()
 
 socket.on("client-disconnect",function(data,fn) {
 	try {
+		console.log("GET client disconnect ",data);
 		processSync(function(onDone) {
 			var s = sockets[data.channel];
+			console.log("DONE client disconnect ",data);
 			if (!s)
 				return onDone();
-			delete sockets[data.channel];;
+			delete sockets[data.channel];
 			s.destroy();
 			onDone();
+			console.log("DONE FINISH!");
 		},socket);
 	} finally {
 		fn();
@@ -126,6 +129,16 @@ socket.on("client-data",function(data,fn) {
 	} finally {
 		fn();
 	}
+});
+socket.on("error",function() {
+	console.log(">> SOCKET ERROR!!!");
+	for (var i in sockets) {
+		var s = sockets[i];
+		s.destroy();
+	}
+	sockets={};
+	delete socket._queue; //process-sync.js
+	delete socket.queue; // seralize-socket.js
 });
 
 socket.on("disconnect",function() {

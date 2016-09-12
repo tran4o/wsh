@@ -37,15 +37,11 @@ function exec(args)
 				{
 					var rc=channels[toDel[i]];
 					var channel = rc.channel;
-					console.log("DEL CHANNEL "+channel);
-					processSync(function(onDone) 
-					{
-						console.log("DEL CHANNEL SEND CLIENT DISCONNECT!");
-						semit(rc.socket,"client-disconnect",{channel:channel},function onD() {
-							console.log(" >> SENT CLIENT-DISCONNECT to CHANNEL "+channel);
-							onDone();
-						});						
-					},rc.socket);
+					console.log("DEL CHANNEL SEND CLIENT DISCONNECT!");
+					semit(rc.socket,"client-disconnect",{channel:channel},function onD() {
+						console.log(" >> SENT CLIENT-DISCONNECT to CHANNEL "+channel);
+						onDone();
+					});						
 					delete channels[toDel[i]];
 				}
 			} 
