@@ -27,7 +27,7 @@ function exec(args)
 	{		
 		var dataMode = false;
 		socket.on("disconnect", function() {
-			console.log(">>> SOCKET.io disconnected "+clientCode);
+			console.log(">>> SOCKET.io disconnected "+socket.clientCode);
 			if (socket.clientCode) 
 			{
 				var toDel=[];
