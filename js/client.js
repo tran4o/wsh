@@ -129,7 +129,6 @@ function exec(args)
 			s.destroy();
 		}
 		sockets={};
-		onDone();
 	});
 }
 exports.exec=exec;
