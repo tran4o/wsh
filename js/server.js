@@ -61,7 +61,6 @@ function exec(args)
 					}
 					channels[channel]={socket:socket,forwardTo:sockets[data.code],channel:channel,code:data.code};
 					semit(sockets[data.code].socket,"wsh-connect",{channel:channel},onDone);
-					console.log("WSH-CONNECT : "+JSON.stringify(data));
 				},socket);
 			} finally {
 				fn();

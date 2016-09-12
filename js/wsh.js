@@ -101,7 +101,6 @@ socket.on("connect",function()
 
 socket.on("client-disconnect",function(data,fn) {
 	try {
-		console.log("GET client disconnect ",data);
 		processSync(function(onDone) {
 			var s = sockets[data.channel];
 			console.log("DONE client disconnect ",data);
@@ -109,8 +108,8 @@ socket.on("client-disconnect",function(data,fn) {
 				return onDone();
 			delete sockets[data.channel];
 			s.destroy();
-			onDone();
 			console.log("DONE FINISH!");
+			onDone();
 		},socket);
 	} finally {
 		fn();
