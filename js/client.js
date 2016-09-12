@@ -60,3 +60,4 @@ function exec(args)
 		sockets={};
 	});
 }
+exports.exec=exec;
