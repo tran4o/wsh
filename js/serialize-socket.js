@@ -16,7 +16,7 @@ module.exports = function(socket,msgcode,data,onDone) {
 		}
 		//console.log("EMIT : "+t.msgcode);
 		socket.emit(t.msgcode,t.data,function() {
-			console.log("DONE EMITTING "+t.msgcode+" | "+JSON.stringify(t.data));
+			//console.log("DONE EMITTING "+t.msgcode+" | "+JSON.stringify(t.data));
 			if (t.onDone)
 				t.onDone();
 			one();

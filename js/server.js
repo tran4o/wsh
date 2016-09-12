@@ -55,7 +55,7 @@ function exec(args)
 				channels={};
 				for (var i in listeners) socket.removeListener(listeners[i]);
 				listeners=[];
-			});
+			},socket);
 		});
 		//---------------------------------------------------------------------------------
 		socket.on("wsh-connect",function(data,fn) {
@@ -75,7 +75,7 @@ function exec(args)
 					channels[channel]={socket:socket,forwardTo:sockets[data.code],channel:channel,code:data.code};
 					semit(sockets[data.code].socket,"wsh-connect",{channel:channel},onDone);
 					console.log("WSH-CONNECT : "+JSON.stringify(data));
-				});
+				},socket);
 			} finally {
 				fn();
 			}
@@ -90,7 +90,7 @@ function exec(args)
 					if (!sockets[c.code])
 						return onDone();
 					semit(sockets[c.code].socket,"wsh-disconnect",{channel:data.channel},onDone);
-				});
+				},socket);
 			} finally {
 				fn();
 			}
@@ -105,7 +105,7 @@ function exec(args)
 					if (!sockets[c.code])
 						return onDone();
 					semit(sockets[c.code].socket,"wsh-data",{channel:data.channel,data:data.data},onDone);
-				});
+				},socket);
 			} finally {
 				fn();
 			}
@@ -124,7 +124,7 @@ function exec(args)
 					sockets[data.code]={socket:socket,seq:sseq++,code:data.code};
 					console.log("Client-Registered with "+JSON.stringify({socket:"<native>",seq:sseq++,code:data.code}))
 					onDone();
-				});
+				},socket);
 			} finally {
 				fn();
 			}
@@ -148,7 +148,7 @@ function exec(args)
 					} else {
 						onDone();
 					}
-				});
+				},socket);
 			} finally {
 				fn();
 			}
@@ -157,12 +157,11 @@ function exec(args)
 		{
 			try {
 				processSync(function(onDone) {
-					console.error("KORRRRRRRRRRRRRRRRRRRRRRRRRRRRRR : "+JSON.stringify(data));
 					var c = channels[data.channel];
 					if (!c)
 						return onDone();
 					semit(c.socket,"client-data",data,onDone);
-				});
+				},socket);
 			} finally {
 				fn();
 			}

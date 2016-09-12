@@ -120,8 +120,6 @@ socket.on("client-data",function(data,fn) {
 			var s = sockets[data.channel];
 			if (!s)
 				return onDone();
-			console.log("CLIENT-DATA IS BUFFER : "+(data.data instanceof Buffer));
-			console.log("CLIENT-DATA : ",data);
 			s.write(data.data);
 			onDone();
 		});

@@ -1,19 +1,24 @@
-var queue=[];
+var data={};
 var working=false;
-module.exports = function(fnc) {
+module.exports = function(fnc,cqueue) {
+	//fnc(function() {});
+	var at = cqueue || data;
+	if (!at.queue) {
+		at.queue={arr:[],working:false};
+	}
+	at=at.queue;
+	//------------------
+	var queue=at.arr;
 	queue.push(fnc);
-	if (working) {
-		for (var i in queue)
-			console.log("PROCESS WORKINGGGGG : ",queue[i].toString());
+	if (at.working) {
 		return;
 	}
-	working=true;
+	at.working=true;
 	one();
 	function one() {
 		var t = queue.shift();
 		if (!t) {
-			working=false;
-			console.log("NOT WORKING ANYMORE!!!!");
+			at.working=false;
 			return;
 		}
 		t(one);

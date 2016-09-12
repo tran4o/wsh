@@ -75,7 +75,6 @@ function exec(args)
 			processSync(function(onDone) {
 				var s = sockets[data.channel];
 				if (s) {
-					console.log("DESTROY S!!!");
 					delete sockets[data.channel];
 					s.destroy();
 				}
