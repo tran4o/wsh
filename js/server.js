@@ -25,14 +25,13 @@ function exec(args)
 	var channels={};
 	io.on('connection', function (socket) 
 	{		
-		var clientCode = undefined;
 		var dataMode = false;
 		socket.on("disconnect", function() {
 			console.log(">>> SOCKET.io disconnected "+clientCode);
-			if (clientCode) 
+			if (socket.clientCode) 
 			{
 				var toDel=[];
-				for (var i in channels) if (channels[i].code == clientCode) toDel.push(i);
+				for (var i in channels) if (channels[i].code == socket.clientCode) toDel.push(i);
 				console.log("TODEL : ",toDel);
 				for (var i in toDel) 
 				{
@@ -114,7 +113,7 @@ function exec(args)
 						console.log("CLIENT REGISTER NOT OK : "+data);
 						return onDone();
 					}
-					clientCode=data.code;			
+					socket.clientCode=data.code;			
 					sockets[data.code]={socket:socket,seq:sseq++,code:data.code};
 					console.log("Client-Registered with "+JSON.stringify({socket:"<native>",seq:sseq++,code:data.code}))
 					onDone();
