@@ -1,8 +1,13 @@
 #!/usr/bin/env node
+var defgs = require("./defaults");
 var server = require("./server");
 var client = require("./client");
+var defs = require("./defaults");
+var semit = require("./serialize-socket");
+var processSync = require("./process-sync");
 var net = require('net');
-
+var io = require("socket.io-client");
+	
 var args = [];
 var options = {};
 var t = process.argv.slice(2);
@@ -25,9 +30,9 @@ exports.args=args;
 //----------------------------
 function usage() {
 	console.log("USAGE : ");
-	console.log("wsh server [port DEF 4000]");
-	console.log("wsh client CODE [server DEF dev2-bg.plan-vision.com:4000]");
-	coneole.log("\nThen : wsh <CODE> [local_port DEF 1234]\nExample : wsh BUS0001 2323)");
+	console.log("wsh server [port DEF "+defs.serverListenPort+"]");
+	console.log("wsh client CODE [server DEF "+defs.serverUrl+"]");
+	console.log("\nThen : wsh <CODE> [local_port DEF 1234]\nExample : wsh BUS0001 2323)");
 }
 if (!args.length)  {
 	usage();
@@ -49,38 +54,78 @@ if (!code) {
 var port = parseInt(args.shift());
 if (!port || isNaN(port))
 	port=1234;
-var url = "dev2-bg.plan-vision.com:4000";
-console.log("Connect to '"+code+' by '+url+" forward to localhost:"+port);
+var url = defs.serverUrl;
+console.log("Connect to '"+code+' by '+url+" forward to "+defs.clientConnectHost+":"+defs.clientConnectPort+" listen to "+port);
 //------------------------------------------------------------------------------
-var socket = io.connect(url);
+var socket = io.connect("http://"+url);
 var sockets={};
-socket.on("connection",function() 
+var doneS=false;
+socket.on("connect",function() 
 {
-	console.log("CONNECTED 1!")
-	net.createServer(function(sock) 
+	if (!doneS) 
 	{
-		console.log("Listen to "+port)
-		var channel = (new Date()).getTime();
-		socket.emit("wsh-connect",{code:code,channel:channel});
-		sockets[channel]=sock;
-		sock.on("close",function() {
-			delete sockets[channel];
-			socket.emit("wsh-disconnect",{channel:channel});
-		})
-	}).listen(port, "localhost");
+		doneS=1;
+		net.createServer(function(sock) 
+		{
+			console.log("Listen to "+port)
+			var channel = (new Date()).getTime();
+			semit(socket,"wsh-connect",{code:code,channel:channel});
+			sockets[channel]=sock;
+			sock.on("close",function() {
+				processSync(function(onDone) {
+					if (!sockets[channel])
+						return onDone();
+					delete sockets[channel];
+					semit(socket,"wsh-disconnect",{channel:channel},onDone);
+				});
+			});
+			sock.on("error",function(err) {
+				processSync(function(onDone) {
+					var s = sockets[channel];
+					if (!s)
+						return onDone();
+					console.error("Error in wsh socket read : "+err);
+					delete sockets[channel];
+					s.destroy();
+					onDone();
+				});
+			});
+			sock.on("data",function(data) {
+				processSync(function(onDone) {
+					semit(socket,"wsh-data",{data:data,channel:channel},onDone);
+				});
+			});
+		}).listen(port, "localhost");
+	}
 });
 
-socket.on("client-disconnect",function(data) {
-	var s = sockets[data.channel];
-	if (!s)
-		return;
-	s.destroy();
-	delete sockets[data.channel];;
+socket.on("client-disconnect",function(data,fn) {
+	try {
+		processSync(function(onDone) {
+			var s = sockets[data.channel];
+			if (!s)
+				return onDone();
+			delete sockets[data.channel];;
+			s.destroy();
+			onDone();
+		});
+	} finally {
+		fn();
+	}
 });
 
-socket.on("client-data",function(data) {
-	var s = sockets[data.channel];
-	if (!s)
-		return;
-	s.send(data.data);
+socket.on("client-data",function(data,fn) {
+	try {
+		processSync(function(onDone) {
+			var s = sockets[data.channel];
+			if (!s)
+				return onDone();
+			console.log("CLIENT-DATA IS BUFFER : "+(data.data instanceof Buffer));
+			console.log("CLIENT-DATA : ",data);
+			s.write(data.data);
+			onDone();
+		});
+	} finally {
+		fn();
+	}
 });
