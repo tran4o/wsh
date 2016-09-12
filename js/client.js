@@ -24,8 +24,19 @@ function exec(args)
 	if (args && args.length)
 		url="http://"+args.shift();
 	console.log("Connecting as CLIENT to "+url+" with CODE '"+code+"'");
+	
 	var socket = io.connect(url);
 	var sockets={};
+
+	//--------------------------
+	socket.on("connect_error",function() {
+		console.log("CONNECT_ERROR!");
+	});
+	socket.on("reconnect_failed",function() {
+		console.log("RECONNECT FAILED!");
+	});
+	//--------------------------
+	
 	socket.on("wsh-connect",function(data,fn) 
 	{
 		try 
