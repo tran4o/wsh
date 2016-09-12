@@ -12,6 +12,7 @@ function exec(args)
 			port = p;
 	}
 	var app = express();
+	var server = require('http').Server(app);
 	app.use(require("compression")());
 	app.use(bodyParser.json()); // for parsing application/json
 	app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
