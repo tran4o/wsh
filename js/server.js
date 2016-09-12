@@ -22,41 +22,31 @@ function exec(args)
 	var ss = require('socket.io-stream');
 	//------------------------------------------------
 	var sockets={};
-	var connections={};	// BY ID	
 	var channels={};
-	var listeners=[];
 	io.on('connection', function (socket) 
 	{		
 		var clientCode = undefined;
 		var dataMode = false;
-		socket.on('disconnect', function() {
+		socket.on("disconnect", function() {
 			console.log(">>> SOCKET.io disconnected ");
-			/*processSync(function(onDone) {
-				if (clientCode) {
-					if (connections[clientCode])
-					for (var i in connections[clientCode])
-						disconnectConnection(connections[clientCode][i]);
-					connections={};
-					clientCode=undefined;
-				}
-				if (socket.forwardTo && socket.forwardTo.socket && socket.forwardChannel ) 
+			if (clientCode) 
+			{
+				var toDel=[];
+				for (var i in channels) if (channels[i].code == clientCode) toDel.push(i); 
+				for (var i in toDel) 
 				{
-					var fwt = socket.forwardTo;
-					var code = fwt.code;
-					var ts = sockets[code];
-					// sure connection is the same 
-					if (ts && ts.seq == ftw.seq) {
-						semit(ftw.socket,"server-disconnect",{channel:socket.forwardChannel},onDone);
-					} else {
-						onDone();
-					}
-				} else {
-					onDone();
+					var rc=channels[toDel[i]];
+					var channel = rc.channel;
+					processSync(function(onDone) 
+					{
+						semit(rc.socket,"client-disconnect",{channel:channel},function onD(r) {
+							console.log(" >> SENT CLIENT-DISCONNECT to CHANNEL "+channel);
+							r();
+						});						
+					},rc.socket);
+					delete channels[toDel[i]];
 				}
-				channels={};
-				for (var i in listeners) socket.removeListener(listeners[i]);
-				listeners=[];
-			},socket);*/
+			} 
 		});
 		//---------------------------------------------------------------------------------
 		socket.on("wsh-connect",function(data,fn) {
