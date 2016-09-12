@@ -29,10 +29,14 @@ function exec(args)
 	var sockets={};
 
 	//--------------------------
-	socket.on("error",function(err) {
-		console.log("CONNECT_ERROR! : err");
+	socket.on("connect_error",function() {
+		console.log("CONNECT_ERROR!");
+	});
+	socket.on("reconnect_failed",function() {
+		console.log("RECONNECT FAILED!");
 	});
 	//--------------------------
+	
 	socket.on("wsh-connect",function(data,fn) 
 	{
 		try 
@@ -104,11 +108,20 @@ function exec(args)
 			fn();
 		}
 	});
+	//--------------------------------
 	socket.on("connect",function() {
+		console.log(">> SOCKET CONNECT!!!")
 		processSync(function(onDone) {
 			semit(socket,"client-register",{code:code},onDone);
 		});
 	});
+	socket.on("reconnect",function() {
+		console.log(">> SOCKET RECONNECTED!!!")
+		processSync(function(onDone) {
+			semit(socket,"client-register",{code:code},onDone);
+		});
+	});
+	//--------------------------------
 	socket.on("disconnect",function() {
 		processSync(function(onDone) {
 			for (var i in sockets) {
