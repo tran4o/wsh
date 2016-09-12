@@ -41,9 +41,9 @@ function exec(args)
 					processSync(function(onDone) 
 					{
 						console.log("DEL CHANNEL SEND CLIENT DISCONNECT!");
-						semit(rc.socket,"client-disconnect",{channel:channel},function onD(r) {
+						semit(rc.socket,"client-disconnect",{channel:channel},function onD() {
 							console.log(" >> SENT CLIENT-DISCONNECT to CHANNEL "+channel);
-							r();
+							onDone();
 						});						
 					},rc.socket);
 					delete channels[toDel[i]];
