@@ -1,3 +1,5 @@
+var BUFFER_SIZE = 1024*1024*2; // 2 MB
+
 var express = require('express');
 var bodyParser = require('body-parser');
 var moment = require("moment");
@@ -53,9 +55,32 @@ function exec(args)
 					if (!onDoneCalled) {onDoneCalled=true;onDone();}
 				});
 				csock.on("data",function(data) {
-					processSync(function(onDone) {
-						semit(socket,"client-data",{data:data,channel:channel},onDone);
-					},socket);
+					
+					if (!csock.__data) {
+						csock.__data=data;
+					} else {
+						csock.__data=Buffer.concat([csock.__data, data]);
+					}
+					if (csock.__data.length > BUFFER_SIZE)
+						csock.pause();
+					if (!csock.__working) {
+						csock.__working=true;
+						oneData();
+					}
+					function oneData() {
+						var d = csock.__data;
+						delete csock.__data;
+						processSync(function(onDone) {
+							semit(socket,"client-data",{data:d,channel:channel},function() {							
+								onDone();
+								if (!csock.__data) {
+									csock.__working=false;
+									csock.resume();
+								} else 
+									oneData();
+							});
+						},socket);
+					}
 				});
 				csock.on("close",function() {
 					processSync(function(onDone) {

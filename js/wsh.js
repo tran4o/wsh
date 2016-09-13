@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+
+var BUFFER_SIZE = 1024*1024*4; // 4 MB
 var defgs = require("./defaults");
 var server = require("./server");
 var client = require("./client");
@@ -67,7 +69,7 @@ socket.on("connect",function()
 		doneS=1;
 		net.createServer(function(sock) 
 		{
-			console.log("Connected on "+port)
+			console.log("Connection on port "+port+"!");
 			var channel = (new Date()).getTime();
 			semit(socket,"wsh-connect",{code:code,channel:channel});
 			sockets[channel]=sock;
@@ -91,9 +93,31 @@ socket.on("connect",function()
 				},socket);
 			});
 			sock.on("data",function(data) {
-				processSync(function(onDone) {
-					semit(socket,"wsh-data",{data:data,channel:channel},onDone);
-				},socket);
+				if (!sock.__data) {
+					sock.__data=data;
+				} else {
+					sock.__data=Buffer.concat([sock.__data, data]);
+				}
+				if (sock.__data.length > BUFFER_SIZE)
+					sock.pause();
+				if (!sock.__working) {
+					sock.__working=true;
+					oneData();
+				}
+				function oneData() {
+					var d = sock.__data;
+					delete sock.__data;
+					processSync(function(onDone) {
+						semit(socket,"wsh-data",{data:d,channel:channel},function() {							
+							onDone();
+							if (!sock.__data) {
+								sock.__working=false;
+								sock.resume();
+							} else 
+								oneData();
+						});
+					},socket);
+				}
 			});
 		}).listen(port, "localhost");
 	}
@@ -103,12 +127,12 @@ socket.on("client-disconnect",function(data,fn) {
 	try {
 		processSync(function(onDone) {
 			var s = sockets[data.channel];
-			console.log("DONE client disconnect ",data);
+			//console.log("DONE client disconnect ",data);
 			if (!s)
 				return onDone();
 			delete sockets[data.channel];
 			s.destroy();
-			console.log("DONE FINISH!");
+			//console.log("DONE FINISH!");
 			onDone();
 		},socket);
 	} finally {
@@ -130,7 +154,7 @@ socket.on("client-data",function(data,fn) {
 	}
 });
 socket.on("error",function() {
-	console.log(">> SOCKET ERROR!!!");
+	//console.log(">> SOCKET ERROR!!!");
 	for (var i in sockets) {
 		var s = sockets[i];
 		s.destroy();
@@ -141,7 +165,7 @@ socket.on("error",function() {
 });
 
 socket.on("disconnect",function() {
-	console.log(">> SOCKET DISCONNECT!!!")
+	//console.log(">> SOCKET DISCONNECT!!!")
 	for (var i in sockets) {
 		var s = sockets[i];
 		s.destroy();
