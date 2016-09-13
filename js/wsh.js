@@ -70,7 +70,7 @@ freeport(function(err, port) {
 							return onDone();
 						delete sockets[channel];
 						semit(socket,"wsh-disconnect",{channel:channel},onDone);
-					},sock);
+					},socket);
 				});
 				sock.on("error",function(err) {
 					processSync(function(onDone) {
@@ -81,7 +81,7 @@ freeport(function(err, port) {
 						delete sockets[channel];
 						s.destroy();
 						onDone();
-					},sock);
+					},socket);
 				});
 				sock.on("data",function(data) {
 					if (!sock.__data) {
@@ -107,7 +107,7 @@ freeport(function(err, port) {
 								} else 
 									oneData();
 							});
-						},sock);
+						},socket);
 					}
 				});
 			}).listen(port, "localhost",function() {
@@ -118,14 +118,14 @@ freeport(function(err, port) {
 
 	socket.on("client-disconnect",function(data,fn) {
 		try {
-			var s = sockets[data.channel];
-			if (!s)
-				return;
 			processSync(function(onDone) {
+				var s = sockets[data.channel];
+				if (!s)
+					return onDone();
 				delete sockets[data.channel];
 				s.destroy();
 				onDone();
-			},s);
+			},socket);
 		} finally {
 			fn();
 		}
@@ -133,10 +133,10 @@ freeport(function(err, port) {
 
 	socket.on("client-data",function(data,fn) {
 		try {
-			var s = sockets[data.channel];
-			if (!s)
-				return;
 			processSync(function(onDone) {
+				var s = sockets[data.channel];
+				if (!s)
+					return onDone();
 				s.write(data.data);
 				onDone();
 			},s);

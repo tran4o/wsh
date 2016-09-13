@@ -54,8 +54,7 @@ function exec(args)
 					sockets[data.channel]=csock;
 					if (!onDoneCalled) {onDoneCalled=true;onDone();}
 				});
-				csock.on("data",function(data) {
-					
+				csock.on("data",function(data) {					
 					if (!csock.__data) {
 						csock.__data=data;
 					} else {
@@ -108,10 +107,10 @@ function exec(args)
 	});
 	socket.on("wsh-disconnect",function(data,fn) {
 		try {
-			var s = sockets[data.channel];
-			if (!s) 
-				return;
 			processSync(function(onDone) {
+				var s = sockets[data.channel];
+				if (!s) 
+					return onDone();
 				delete sockets[data.channel];
 				s.destroy();
 				onDone();
@@ -123,10 +122,10 @@ function exec(args)
 	socket.on("wsh-data",function(data,fn) {
 		try {
 			//console.log("WSH-DATA : "+data.data);
-			var s = sockets[data.channel];
-			if (!s)
-				return;
 			processSync(function(onDone) {
+				var s = sockets[data.channel];
+				if (!s)
+					return onDone();
 				s.write(data.data);
 				onDone();
 			},socket);
