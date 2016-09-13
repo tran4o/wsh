@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-var BUFFER_SIZE = 1024*1024*4; // 4 MB
+var BUFFER_SIZE = 1024*1024*40; // 40 MB
 var defgs = require("./defaults");
 var server = require("./server");
 var client = require("./client");
@@ -111,8 +111,8 @@ socket.on("connect",function()
 						semit(socket,"wsh-data",{data:d,channel:channel},function() {							
 							onDone();
 							if (!sock.__data) {
-								sock.__working=false;
 								sock.resume();
+								sock.__working=false;
 							} else 
 								oneData();
 						});
