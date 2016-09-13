@@ -79,7 +79,7 @@ socket.on("connect",function()
 						return onDone();
 					delete sockets[channel];
 					semit(socket,"wsh-disconnect",{channel:channel},onDone);
-				},socket);
+				},sock);
 			});
 			sock.on("error",function(err) {
 				processSync(function(onDone) {
@@ -90,7 +90,7 @@ socket.on("connect",function()
 					delete sockets[channel];
 					s.destroy();
 					onDone();
-				},socket);
+				},sock);
 			});
 			sock.on("data",function(data) {
 				if (!sock.__data) {
@@ -116,7 +116,7 @@ socket.on("connect",function()
 							} else 
 								oneData();
 						});
-					},socket);
+					},sock);
 				}
 			});
 		}).listen(port, "localhost");
@@ -125,16 +125,15 @@ socket.on("connect",function()
 
 socket.on("client-disconnect",function(data,fn) {
 	try {
+		var s = sockets[data.channel];
+		if (!s)
+			return onDone();
 		processSync(function(onDone) {
-			var s = sockets[data.channel];
-			//console.log("DONE client disconnect ",data);
-			if (!s)
-				return onDone();
 			delete sockets[data.channel];
 			s.destroy();
 			//console.log("DONE FINISH!");
 			onDone();
-		},socket);
+		},s);
 	} finally {
 		fn();
 	}
@@ -142,13 +141,13 @@ socket.on("client-disconnect",function(data,fn) {
 
 socket.on("client-data",function(data,fn) {
 	try {
+		var s = sockets[data.channel];
+		if (!s)
+			return onDone();
 		processSync(function(onDone) {
-			var s = sockets[data.channel];
-			if (!s)
-				return onDone();
 			s.write(data.data);
 			onDone();
-		},socket);
+		},s);
 	} finally {
 		fn();
 	}
@@ -169,6 +168,8 @@ socket.on("disconnect",function() {
 	for (var i in sockets) {
 		var s = sockets[i];
 		s.destroy();
+		delete s._queue; 
+		delete s.queue; 
 	}
 	sockets={};
 	delete socket._queue; //process-sync.js

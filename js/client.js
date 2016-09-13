@@ -79,7 +79,7 @@ function exec(args)
 								} else 
 									oneData();
 							});
-						},socket);
+						},csock);
 					}
 				});
 				csock.on("close",function() {
@@ -89,7 +89,7 @@ function exec(args)
 							delete sockets[channel];
 						}
 						onDone();
-					},socket);
+					},csock);
 				});
 				csock.on("error",function(err) {
 					if (!onDoneCalled) {onDoneCalled=true;onDone();}
@@ -99,7 +99,7 @@ function exec(args)
 							semit(socket,"client-disconnect",{channel:channel},onDone);
 							delete sockets[channel];
 						}
-					},socket);
+					},csock);
 				});
 			},socket);
 		} finally {
@@ -108,14 +108,14 @@ function exec(args)
 	});
 	socket.on("wsh-disconnect",function(data,fn) {
 		try {
+			var s = sockets[data.channel];
+			if (!s) 
+				return;
 			processSync(function(onDone) {
-				var s = sockets[data.channel];
-				if (s) {
-					delete sockets[data.channel];
-					s.destroy();
-				}
+				delete sockets[data.channel];
+				s.destroy();
 				onDone();
-			},socket);
+			},s);
 		} finally {
 			fn();
 		}
@@ -123,12 +123,13 @@ function exec(args)
 	socket.on("wsh-data",function(data,fn) {
 		try {
 			//console.log("WSH-DATA : "+data.data);
+			var s = sockets[data.channel];
+			if (!s)
+				return;
 			processSync(function(onDone) {
-				var s = sockets[data.channel];
-				if (s)
-					s.write(data.data);
+				s.write(data.data);
 				onDone();
-			},socket);
+			},s);
 		} finally {
 			fn();
 		}
@@ -136,15 +137,7 @@ function exec(args)
 	//--------------------------------
 	socket.on("connect",function() {
 		console.log(">> SOCKET CONNECT!!!")
-		processSync(function(onDone) {
-			semit(socket,"client-register",{code:code},onDone);
-		},socket);
-	});
-	socket.on("reconnect",function() {
-		console.log(">> SOCKET RECONNECTED!!!")
-		/*processSync(function(onDone) {
-			semit(socket,"client-register",{code:code},onDone);
-		},socket);*/
+		semit(socket,"client-register",{code:code},function() {});
 	});
 	//--------------------------------
 	socket.on("disconnect",function() {
@@ -152,6 +145,8 @@ function exec(args)
 		for (var i in sockets) {
 			var s = sockets[i];
 			s.destroy();
+			delete s._queue;
+			delete s.queue;
 		}
 		sockets={};
 		delete socket._queue; //process-sync.js
