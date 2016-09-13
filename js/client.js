@@ -1,4 +1,4 @@
-var BUFFER_SIZE = 1024*1024*10; // 10 MB
+var BUFFER_SIZE = 1024*1024*4; // 4 MB
 
 var express = require('express');
 var bodyParser = require('body-parser');

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-var BUFFER_SIZE = 1024*1024*40; // 40 MB
+var BUFFER_SIZE = 1024*1024*20; // 20 MB
 var defgs = require("./defaults");
 var server = require("./server");
 var client = require("./client");
