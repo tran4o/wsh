@@ -79,7 +79,7 @@ function exec(args)
 								} else 
 									oneData();
 							});
-						},csock);
+						},socket);
 					}
 				});
 				csock.on("close",function() {
@@ -89,7 +89,7 @@ function exec(args)
 							delete sockets[channel];
 						}
 						onDone();
-					},csock);
+					},socket);
 				});
 				csock.on("error",function(err) {
 					if (!onDoneCalled) {onDoneCalled=true;onDone();}
@@ -99,7 +99,7 @@ function exec(args)
 							semit(socket,"client-disconnect",{channel:channel},onDone);
 							delete sockets[channel];
 						}
-					},csock);
+					},socket);
 				});
 			},socket);
 		} finally {
@@ -115,7 +115,7 @@ function exec(args)
 				delete sockets[data.channel];
 				s.destroy();
 				onDone();
-			},s);
+			},socket);
 		} finally {
 			fn();
 		}
@@ -129,7 +129,7 @@ function exec(args)
 			processSync(function(onDone) {
 				s.write(data.data);
 				onDone();
-			},s);
+			},socket);
 		} finally {
 			fn();
 		}
