@@ -127,7 +127,7 @@ socket.on("client-disconnect",function(data,fn) {
 	try {
 		var s = sockets[data.channel];
 		if (!s)
-			return onDone();
+			return;
 		processSync(function(onDone) {
 			delete sockets[data.channel];
 			s.destroy();
@@ -143,7 +143,7 @@ socket.on("client-data",function(data,fn) {
 	try {
 		var s = sockets[data.channel];
 		if (!s)
-			return onDone();
+			return;
 		processSync(function(onDone) {
 			s.write(data.data);
 			onDone();
