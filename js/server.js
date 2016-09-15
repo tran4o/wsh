@@ -27,7 +27,7 @@ function exec(args)
 	{		
 		var dataMode = false;
 		socket.on("disconnect", function() {
-			console.log(">>> SOCKET.io disconnected "+socket.clientCode);
+			//console.log(">>> SOCKET.io disconnected "+socket.clientCode);
 			if (socket.clientCode) 
 			{
 				var toDel=[];
@@ -36,9 +36,9 @@ function exec(args)
 				{
 					var rc=channels[toDel[i]];
 					var channel = rc.channel;
-					console.log("DEL CHANNEL SEND CLIENT DISCONNECT!");
+					//console.log("DEL CHANNEL SEND CLIENT DISCONNECT!");
 					semit(rc.socket,"client-disconnect",{channel:channel},function onD() {
-						console.log(" >> SENT CLIENT-DISCONNECT to CHANNEL "+channel);
+						//console.log(" >> SENT CLIENT-DISCONNECT to CHANNEL "+channel);
 					});						
 					delete channels[toDel[i]];
 				}
@@ -46,7 +46,7 @@ function exec(args)
 		});
 		//---------------------------------------------------------------------------------
 		socket.on("wsh-connect",function(data,fn) {
-			console.log(data.seq+" : wsh-connect");
+			//console.log(data.seq+" : wsh-connect");
 			if (!data.channel || !data.code)
 				return fn();
 			var channel = data.channel;
@@ -78,7 +78,7 @@ function exec(args)
 		socket.on("wsh-data",function(data,fn) 
 		{
 			try {
-				console.log(data.seq+" : wsh-data "+data.data.length);
+				//console.log(data.seq+" : wsh-data "+data.data.length);
 				var c = channels[data.channel];
 				if (!c)
 					return;
@@ -113,7 +113,7 @@ function exec(args)
 		});
 		//-------------------------------------
 		socket.on("client-register",function(data,fn) {
-			console.log(data.seq+" : client-register");
+			//console.log(data.seq+" : client-register");
 			try 
 			{
 				if (!data || !data.code) 
@@ -126,7 +126,7 @@ function exec(args)
 			}
 		});
 		socket.on("client-disconnect",function(data,fn) {
-			console.log(data.seq+" : client-disconnect");
+			//console.log(data.seq+" : client-disconnect");
 			try {
 				if (data.channel) 
 				{
@@ -144,7 +144,7 @@ function exec(args)
 		});		
 		socket.on("client-data",function(data,fn) 
 		{
-			console.log(data.seq+" : client-data "+data.data.length);
+			//console.log(data.seq+" : client-data "+data.data.length);
 			try {
 				var c = channels[data.channel];
 				if (!c)

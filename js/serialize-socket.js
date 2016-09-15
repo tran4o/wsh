@@ -6,17 +6,17 @@ module.exports = function(socket,msgcode,data,onDone) {
 	}
 	data=data||{};
 	data.seq=aseq++;
-	if (data.data && data.data.length)
+	/*if (data.data && data.data.length)
 		console.log(" >> SENDING "+msgcode+" : "+data.data.length);
 	else
-		console.log(" >> sending "+msgcode);
+		console.log(" >> sending "+msgcode);*/
 	socket._queue.push({msgcode:msgcode,data:data,onDone:onDone});
 	if (socket._working)
 		return;
 	socket._working=true;
 	one();
 	function one() {
-		setTimeout(function() {
+		//setTimeout(function() {
 			var t = socket._queue.shift();
 			if (!t) {
 				socket._working=false;
@@ -27,6 +27,6 @@ module.exports = function(socket,msgcode,data,onDone) {
 					t.onDone();
 				one();
 			});
-		},0);
+		//},0);
 	}
 };

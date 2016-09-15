@@ -40,7 +40,7 @@ function exec(args)
 	//--------------------------
 	socket.on("wsh-connect",function(data,fn) 
 	{
-		console.log("wsh-connect(ed) : "+JSON.stringify(data));
+		//console.log("wsh-connect(ed) : "+JSON.stringify(data));
 		var channel=data.channel;
 		var csock=newLocalConnection(function() 
 		{
@@ -99,7 +99,7 @@ function exec(args)
 		}
 	});
 	socket.on("wsh-data",function(data,fn) {
-		console.log(data.seq+": wsh-data : "+data.data.length);
+		//console.log(data.seq+": wsh-data : "+data.data.length);
 		try 
 		{
 			var s = sockets[data.channel];

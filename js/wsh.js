@@ -110,7 +110,7 @@ freeport(function(err, port) {
 	});
 
 	socket.on("client-disconnect",function(data,fn) {
-		console.log(data.seq+" : client-disconnect");
+		//console.log(data.seq+" : client-disconnect");
 		try {
 			var s = sockets[data.channel];
 			if (!s)
@@ -123,7 +123,7 @@ freeport(function(err, port) {
 	});
 
 	socket.on("client-data",function(data,fn) {
-		console.log(data.seq+" : client-data : "+data.data.length);
+		//console.log(data.seq+" : client-data : "+data.data.length);
 		try 
 		{
 			var s = sockets[data.channel];
