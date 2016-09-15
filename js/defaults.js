@@ -5,7 +5,7 @@ module.exports =
 	//clientConnectHost : "127.0.0.1",
 	//clientConnectPort : 1337
 
-	clientConnectHost : "localhost",
+	clientConnectHost : "127.0.0.1",
 	clientConnectPort : 22
 	
 };
