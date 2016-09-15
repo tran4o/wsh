@@ -65,23 +65,19 @@ freeport(function(err, port) {
 				semit(socket,"wsh-connect",{code:code,channel:channel});
 				sockets[channel]=sock;
 				sock.on("close",function() {
-					processSync(function(onDone) {
-						if (!sockets[channel])
-							return onDone();
-						delete sockets[channel];
-						semit(socket,"wsh-disconnect",{channel:channel},onDone);
-					},socket);
+					if (!sockets[channel])
+						return;
+					delete sockets[channel];
+					semit(socket,"wsh-disconnect",{channel:channel});
 				});
 				sock.on("error",function(err) {
-					processSync(function(onDone) {
-						var s = sockets[channel];
-						if (!s)
-							return onDone();
-						console.error("Error in wsh socket read : "+err);
-						delete sockets[channel];
-						s.destroy();
-						onDone();
-					},socket);
+					var s = sockets[channel];
+					if (!s)
+						return onDone();
+					console.error("Error in wsh socket read : "+err);
+					delete sockets[channel];
+					s.destroy();
+					onDone();
 				});
 				sock.on("data",function(data) {
 					if (!sock.__data) {
@@ -98,16 +94,13 @@ freeport(function(err, port) {
 					function oneData() {
 						var d = sock.__data;
 						delete sock.__data;
-						processSync(function(onDone) {
-							semit(socket,"wsh-data",{data:d,channel:channel},function() {							
-								onDone();
-								if (!sock.__data) {
-									sock.resume();
-									sock.__working=false;
-								} else 
-									oneData();
-							});
-						},socket);
+						semit(socket,"wsh-data",{data:d,channel:channel},function() {							
+							if (!sock.__data) {
+								sock.resume();
+								sock.__working=false;
+							} else 
+								oneData();
+						});
 					}
 				});
 			}).listen(port, "localhost",function() {
@@ -117,33 +110,50 @@ freeport(function(err, port) {
 	});
 
 	socket.on("client-disconnect",function(data,fn) {
+		console.log(data.seq+" : client-disconnect");
 		try {
-			processSync(function(onDone) {
-				var s = sockets[data.channel];
-				if (!s)
-					return onDone();
-				delete sockets[data.channel];
-				s.destroy();
-				onDone();
-			},socket);
+			var s = sockets[data.channel];
+			if (!s)
+				return;
+			delete sockets[data.channel];
+			s.destroy();
 		} finally {
 			fn();
 		}
 	});
 
 	socket.on("client-data",function(data,fn) {
-		try {
-			processSync(function(onDone) {
-				var s = sockets[data.channel];
-				if (!s)
-					return onDone();
-				s.write(data.data);
-				onDone();
-			},s);
+		console.log(data.seq+" : client-data : "+data.data.length);
+		try 
+		{
+			var s = sockets[data.channel];
+			if (!s)
+				return;
+			if (!s._data) {
+				s._data=data.data;
+			} else {
+				s._data=Buffer.concat([s._data, data.data]);
+			}
+			if (!s._working) {
+				s._working=true;
+				oneData();
+			}
+			function oneData() 
+			{
+				var d = s._data;
+				delete s._data;
+				s.write(d,function() {
+					if (!s._data) {
+						s._working=false;
+					} else 
+						oneData();
+				});
+			}
 		} finally {
 			fn();
 		}
 	});
+	
 	socket.on("error",function() {
 		for (var i in sockets) {
 			var s = sockets[i];
@@ -154,7 +164,7 @@ freeport(function(err, port) {
 		delete socket.queue; // seralize-socket.js
 	});
 
-	socket.on("disconnect",function() {
+	socket.on("disconnect",function(data) {
 		for (var i in sockets) {
 			var s = sockets[i];
 			s.destroy();
@@ -168,12 +178,14 @@ freeport(function(err, port) {
 });
 
 function startSSH(port) {
+	/*var exec="node.exe";
+	var args=["js/test/tclient.js",""+port];*/
+	var isWin = /^win/.test(process.platform);
 	var exec = isWin ? "ssh.exe" : "ssh";
 	args.unshift(port);
 	args.unshift("-p");
 	var opts = {stdio:[0,1,2]};
-	var isWin = /^win/.test(process.platform);
-	var p = require("child_process").spawn("ssh.exe",args,opts);
+	var p = require("child_process").spawn(exec,args,opts);
 	p.on("exit",function(res) {
 		process.exit(res);
 	});

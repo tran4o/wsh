@@ -46,37 +46,31 @@ function exec(args)
 		});
 		//---------------------------------------------------------------------------------
 		socket.on("wsh-connect",function(data,fn) {
-			try {
-				processSync(function(onDone) {
-					if (!data.channel || !data.code)
-						return onDone();
-					var channel = data.channel;
-					if (!sockets[data.code]) {
-						console.error("ERROR in wsh-connect : sockets[data.code] not defined ("+data.code+")");
-						var c = channels[data.channel];
-						if (!c)
-							return onDone();
-						semit(c.socket,"client-disconnect",{channel:channel},onDone);
-						return;	// ERROR NOT AVAILILABLE
-					}
-					channels[channel]={socket:socket,forwardTo:sockets[data.code],channel:channel,code:data.code};
-					semit(sockets[data.code].socket,"wsh-connect",{channel:channel},onDone);
-				},socket);
-			} finally {
-				fn();
+			console.log(data.seq+" : wsh-connect");
+			if (!data.channel || !data.code)
+				return fn();
+			var channel = data.channel;
+			if (!sockets[data.code]) 
+			{
+				console.error("ERROR in wsh-connect : sockets[data.code] not defined ("+data.code+")");
+				var c = channels[data.channel];
+				if (!c)
+					return fn();
+				semit(c.socket,"client-disconnect",{channel:channel});
+				return fn();			// ERROR NOT AVAILILABLE
 			}
+			channels[channel]={socket:socket,forwardTo:sockets[data.code],channel:channel,code:data.code};
+			semit(sockets[data.code].socket,"wsh-connect",{channel:channel});
+			return fn();
 		});		
 		socket.on("wsh-disconnect",function(data,fn) {
 			try {
-				processSync(function(onDone) {
-					console.log("WSH-DISCONNECT SERVER ::::::::::::: ",data);
-					var c = channels[data.channel];
-					if (!c)
-						return onDone();
-					if (!sockets[c.code])
-						return onDone();
-					semit(sockets[c.code].socket,"wsh-disconnect",{channel:data.channel},onDone);
-				},socket);
+				var c = channels[data.channel];
+				if (!c)
+					return;
+				if (!sockets[c.code])
+					return;
+				semit(sockets[c.code].socket,"wsh-disconnect",{channel:data.channel});
 			} finally {
 				fn();
 			}
@@ -84,70 +78,98 @@ function exec(args)
 		socket.on("wsh-data",function(data,fn) 
 		{
 			try {
-				processSync(function(onDone) {
-					var c = channels[data.channel];
-					if (!c)
-						return onDone();
+				console.log(data.seq+" : wsh-data "+data.data.length);
+				var c = channels[data.channel];
+				if (!c)
+					return;
+				if (!sockets[c.code])
+					return;
+				var s = c;
+				if (!s._data) {
+					s._data=data.data;
+				} else {
+					s._data=Buffer.concat([s._data, data.data]);
+				}
+				if (!s._working) {
+					s._working=true;
+					oneData();
+				}
+				function oneData() 
+				{
+					var d = s._data;
+					delete s._data;				
 					if (!sockets[c.code])
-						return onDone();
-					semit(sockets[c.code].socket,"wsh-data",{channel:data.channel,data:data.data},onDone);
-				},socket);
+						return;
+					semit(sockets[c.code].socket,"wsh-data",{channel:c.channel,data:d},function() {
+						if (!s._data) {
+							s._working=false;
+						} else 
+							oneData();
+					});
+				}
 			} finally {
 				fn();
 			}
 		});
 		//-------------------------------------
 		socket.on("client-register",function(data,fn) {
+			console.log(data.seq+" : client-register");
 			try 
 			{
-				processSync(function(onDone) {
-					if (!data || !data.code) 
-					{
-						console.log("CLIENT REGISTER NOT OK : "+data);
-						return onDone();
-					}
-					socket.clientCode=data.code;			
-					sockets[data.code]={socket:socket,seq:sseq++,code:data.code};
-					console.log("Client-Registered with "+JSON.stringify({socket:"<native>",seq:sseq++,code:data.code}))
-					onDone();
-				},socket);
+				if (!data || !data.code) 
+					return;
+				socket.clientCode=data.code;			
+				sockets[data.code]={socket:socket,seq:sseq++,code:data.code};
+				console.log("Client-Registered with "+JSON.stringify({socket:"<native>",seq:sseq++,code:data.code}))
 			} finally {
 				fn();
 			}
 		});
 		socket.on("client-disconnect",function(data,fn) {
+			console.log(data.seq+" : client-disconnect");
 			try {
-				processSync(function(onDone) {
-					if (data.channel) 
+				if (data.channel) 
+				{
+					if (channels[data.channel]) 
 					{
-						if (channels[data.channel]) 
-						{
-							var s = channels[data.channel].socket;
-							if (s) 
-								semit(s,"client-disconnect",{channel:data.channel},onDone);
-							else
-								onDone();
-							delete channels[data.channel];
-						} else {
-							onDone();
-						}
-					} else {
-						onDone();
-					}
-				},socket);
+						var s = channels[data.channel].socket;
+						if (s) 
+							semit(s,"client-disconnect",{channel:data.channel});
+						delete channels[data.channel];
+					} 
+				} 
 			} finally {
 				fn();
 			}
 		});		
 		socket.on("client-data",function(data,fn) 
 		{
+			console.log(data.seq+" : client-data "+data.data.length);
 			try {
-				processSync(function(onDone) {
-					var c = channels[data.channel];
-					if (!c)
-						return onDone();
-					semit(c.socket,"client-data",data,onDone);
-				},socket);
+				var c = channels[data.channel];
+				if (!c)
+					return;
+				var s = c;
+				if (!s.data) {
+					s.data=data.data;
+				} else {
+					s.data=Buffer.concat([s.data, data.data]);
+				}
+				if (!s.working) {
+					s.working=true;
+					oneData();
+				}
+				function oneData() 
+				{
+					var d = s.data;
+					delete s.data;				
+					semit(c.socket,"client-data",{channel:c.channel,data:d},function() {
+						if (!s.data) {
+							s.working=false;
+						} else 
+							oneData();
+					});
+				}
 			} finally {
 				fn();
 			}

@@ -38,97 +38,93 @@ function exec(args)
 		console.log("RECONNECT FAILED!");
 	});
 	//--------------------------
-	
 	socket.on("wsh-connect",function(data,fn) 
 	{
-		try 
+		console.log("wsh-connect(ed) : "+JSON.stringify(data));
+		var channel=data.channel;
+		var csock=newLocalConnection(function() 
 		{
-			processSync(function(onDone) 
-			{
-				console.log("wsh-connect(ed) : "+JSON.stringify(data));
-				var channel=data.channel;
-				var onDoneCalled=false;
-				var csock=newLocalConnection(function() 
-				{
-					csock.channel=channel;
-					sockets[data.channel]=csock;
-					if (!onDoneCalled) {onDoneCalled=true;onDone();}
-				});
-				csock.on("data",function(data) {					
-					if (!csock.__data) {
-						csock.__data=data;
-					} else {
-						csock.__data=Buffer.concat([csock.__data, data]);
-					}
-					if (csock.__data.length > BUFFER_SIZE)
-						csock.pause();
-					if (!csock.__working) {
-						csock.__working=true;
-						oneData();
-					}
-					function oneData() {
-						var d = csock.__data;
-						delete csock.__data;
-						processSync(function(onDone) {
-							semit(socket,"client-data",{data:d,channel:channel},function() {							
-								onDone();
-								if (!csock.__data) {
-									csock.__working=false;
-									csock.resume();
-								} else 
-									oneData();
-							});
-						},socket);
-					}
-				});
-				csock.on("close",function() {
-					processSync(function(onDone) {
-						if (sockets[data.channel]) {
-							semit(socket,"client-disconnect",{channel:channel},onDone);
-							delete sockets[channel];
-						}
-						onDone();
-					},socket);
-				});
-				csock.on("error",function(err) {
-					if (!onDoneCalled) {onDoneCalled=true;onDone();}
-					processSync(function(onDone) {
-						console.error("Socket error : ",err);
-						if (sockets[data.channel]) {
-							semit(socket,"client-disconnect",{channel:channel},onDone);
-							delete sockets[channel];
-						}
-					},socket);
-				});
-			},socket);
-		} finally {
+			csock.channel=channel;
+			sockets[data.channel]=csock;
+			csock.on("data",function(data) 
+			{					
+				if (!csock.__data) {
+					csock.__data=data;
+				} else {
+					csock.__data=Buffer.concat([csock.__data, data]);
+				}
+				if (csock.__data.length > BUFFER_SIZE)
+					csock.pause();
+				if (!csock.__working) {
+					csock.__working=true;
+					oneData();
+				}
+				function oneData() {
+					var d = csock.__data;
+					delete csock.__data;
+					semit(socket,"client-data",{data:d,channel:channel},function() {							
+						if (!csock.__data) {
+							csock.__working=false;
+							csock.resume();
+						} else 
+							oneData();
+					});
+				}
+			});
+			csock.on("close",function() {
+				if (sockets[data.channel]) {
+					semit(socket,"client-disconnect",{channel:channel});
+					delete sockets[channel];
+				}
+			});
+			csock.on("error",function(err) {
+				console.error("Socket error : ",err);
+				if (sockets[data.channel]) {
+					semit(socket,"client-disconnect",{channel:channel});
+					delete sockets[channel];
+				}
+			});
 			fn();
-		}
+		});
 	});
 	socket.on("wsh-disconnect",function(data,fn) {
 		try {
-			processSync(function(onDone) {
-				var s = sockets[data.channel];
-				if (!s) 
-					return onDone();
-				delete sockets[data.channel];
-				s.destroy();
-				onDone();
-			},socket);
+			var s = sockets[data.channel];
+			if (!s) 
+				return;
+			delete sockets[data.channel];
+			s.destroy();
 		} finally {
 			fn();
 		}
 	});
 	socket.on("wsh-data",function(data,fn) {
-		try {
-			//console.log("WSH-DATA : "+data.data);
-			processSync(function(onDone) {
-				var s = sockets[data.channel];
-				if (!s)
-					return onDone();
-				s.write(data.data);
-				onDone();
-			},socket);
+		console.log(data.seq+": wsh-data : "+data.data.length);
+		try 
+		{
+			var s = sockets[data.channel];
+			if (!s)
+				return;
+			if (!s._data) {
+				s._data=data.data;
+			} else {
+				s._data=Buffer.concat([s._data, data.data]);
+			}
+			if (!s._working) {
+				s._working=true;
+				oneData();
+			}
+			function oneData() 
+			{
+				var d = s._data;
+				delete s._data;
+				s.write(d,function() {
+					if (!s._data) {
+						s._working=false;
+					} else 
+						oneData();
+				});
+			}
 		} finally {
 			fn();
 		}
@@ -144,8 +140,6 @@ function exec(args)
 		for (var i in sockets) {
 			var s = sockets[i];
 			s.destroy();
-			delete s._queue;
-			delete s.queue;
 		}
 		sockets={};
 		delete socket._queue; //process-sync.js
