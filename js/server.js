@@ -3,10 +3,31 @@ var bodyParser = require('body-parser');
 var moment = require("moment");
 var defs = require("./defaults");
 var semit = require("./serialize-socket");
+
+////////////////////////////////////////////////////////////////
+
+var extev;
+
+try {
+	extev = require('./external-events');
+	console.log(`${Object.keys(extev).length} events registered`);
+} catch (err) {
+	console.log("no external events defined: " + err);
+}
+
+////////////////////////////////////////////////////////////////
+
+let log4node = require('log4node');
+let logf = new log4node.Log4Node({level: 'info', file: '/home/visionr/log/wsh-server.log'});
+let logc = console.log;
+console.log = l => { logc(l);  logf.info(l) };
+
+////////////////////////////////////////////////////////////////
+
 var processSync = require("./process-sync");
 var sseq=0;
-function exec(args) 
-{
+
+function exec(args) {
 	var port = defs.serverListenPort;
 	if (args && args.length) {
 		var p = parseInt(args.shift());
@@ -120,11 +141,26 @@ function exec(args)
 					return;
 				socket.clientCode=data.code;			
 				sockets[data.code]={socket:socket,seq:sseq++,code:data.code};
-				console.log("Client-Registered with "+JSON.stringify({socket:"<native>",seq:sseq++,code:data.code}))
+				let sdetail = {socket:"<native>",seq:sseq++,code:data.code};
+
+				console.log(`{"registered": ${JSON.stringify(sdetail)} }`);
+
+				if (extev && extev.events['client-register']) {
+					extev.events['client-register'](sdetail, socket);
+				}
 			} finally {
 				fn();
 			}
 		});
+		socket.on("client-ping",function(data,fn) {
+      try {
+				if (extev && extev.events['client-ping']) {
+					extev.events['client-ping'](sdetail, socket);
+				} 
+      } finally {
+		    fn();
+      }
+	  });
 		socket.on("client-disconnect",function(data,fn) {
 			//console.log(data.seq+" : client-disconnect");
 			try {

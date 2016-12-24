@@ -132,7 +132,11 @@ function exec(args)
 	//--------------------------------
 	socket.on("connect",function() {
 		console.log(">> SOCKET CONNECT!!!")
-		semit(socket,"client-register",{code:code},function() {});
+		semit(socket,"client-register",{code:code},function() {
+			setInterval(function() {
+				semit(socket, "client-ping", {code:code}, function () {} );
+	  	}, 1000);
+	  });
 	});
 	//--------------------------------
 	socket.on("disconnect",function() {
