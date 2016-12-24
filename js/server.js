@@ -86,14 +86,14 @@ function exec(args) {
 		});		
 		socket.on("wsh-disconnect",function(data,fn) {
 			try {
-				var c = channels[data.channel];
+				var c = data ? channels[data.channel] : null;
 				if (!c)
 					return;
 				if (!sockets[c.code])
 					return;
 				semit(sockets[c.code].socket,"wsh-disconnect",{channel:data.channel});
 			} finally {
-				fn();
+				if (fn) fn();
 			}
 		});		
 		socket.on("wsh-data",function(data,fn) 
@@ -154,8 +154,9 @@ function exec(args) {
 		});
 		socket.on("client-ping",function(data,fn) {
       try {
+				console.log('client ping');
 				if (extev && extev.events['client-ping']) {
-					extev.events['client-ping'](sdetail, socket);
+					extev.events['client-ping'](data, socket);
 				} 
       } finally {
 		    fn();
