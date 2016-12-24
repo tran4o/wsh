@@ -11,14 +11,10 @@ var net = require("net");
 var clientConnectHost = defs.clientConnectHost;
 var clientConnect = defs.clientConnectPort;
 
-function newLocalConnection(onDone) {
-	var client = new net.Socket();
-	client.connect(clientConnect, clientConnectHost, onDone);
-	return client;
-}
 var sseq=0;
 function exec(args) 
 {
+
 	var code="DEF";
 	if (args && args.length)
 		code=args.shift();
@@ -30,6 +26,9 @@ function exec(args)
 	var socket = io.connect(url);
 	var sockets={};
 
+	socket.on("error", function(e) {
+		console.log("ERROR! " + e);
+	});
 	//--------------------------
 	socket.on("connect_error",function() {
 		console.log("CONNECT_ERROR!");
@@ -40,10 +39,29 @@ function exec(args)
 	//--------------------------
 	socket.on("wsh-connect",function(data,fn) 
 	{
-		//console.log("wsh-connect(ed) : "+JSON.stringify(data));
+		function newLocalConnection(onDone) {
+			var client = new net.Socket(); 
+
+			client.on("error",function(err) {
+				debugger;
+				console.error("Socket error : ",err);
+				semit(socket,"client-disconnect",{channel:data.channel});
+			});
+
+			try {
+				client.connect(clientConnect, clientConnectHost, onDone);
+			} catch (e) {
+				console.log(e);
+			}
+
+			return client;
+		}
+
+		console.log("wsh-connect(ed) : "+JSON.stringify(data));
 		var channel=data.channel;
 		var csock=newLocalConnection(function() 
 		{
+			console.log('local socket instantiated');
 			csock.channel=channel;
 			sockets[data.channel]=csock;
 			csock.on("data",function(data) 
@@ -71,19 +89,14 @@ function exec(args)
 					});
 				}
 			});
+
 			csock.on("close",function() {
 				if (sockets[data.channel]) {
 					semit(socket,"client-disconnect",{channel:channel});
 					delete sockets[channel];
 				}
 			});
-			csock.on("error",function(err) {
-				console.error("Socket error : ",err);
-				if (sockets[data.channel]) {
-					semit(socket,"client-disconnect",{channel:channel});
-					delete sockets[channel];
-				}
-			});
+
 			fn();
 		});
 	});
@@ -133,10 +146,16 @@ function exec(args)
 	socket.on("connect",function() {
 		console.log(">> SOCKET CONNECT!!!")
 		semit(socket,"client-register",{code:code},function() {
-			setInterval(function() {
-				semit(socket, "client-ping", {code:code}, function () {} );
-	  	}, 1000);
+		  console.log('>> REGISTER CONFIRM');   
+//		debugger;
 	  });
+/*
+			setInterval(function() {
+				try {
+						semit(socket, "client-ping", {code:code}, function () {} );
+				} catch(e) { console.log(e); }
+	  	}, 2000);
+*/
 	});
 	//--------------------------------
 	socket.on("disconnect",function() {
