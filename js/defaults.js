@@ -6,6 +6,7 @@ module.exports =
 	//clientConnectPort : 1337
 
 	clientConnectHost : "127.0.0.1",
-	clientConnectPort : 22
+	clientConnectPort : 22,
 	
+	keepAlive : 15*1000
 };

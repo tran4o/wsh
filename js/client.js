@@ -1,4 +1,4 @@
-var BUFFER_SIZE = 1024*1024*4; // 4 MB
+var BUFFER_SIZE = 1024 * 1024 * 4; // 4 MB
 
 var express = require('express');
 var bodyParser = require('body-parser');
@@ -8,44 +8,47 @@ var io = require("socket.io-client");
 var semit = require("./serialize-socket");
 var processSync = require("./process-sync");
 var net = require("net");
-var clientConnectHost = defs.clientConnectHost;
-var clientConnect = defs.clientConnectPort;
 
-var sseq=0;
-function exec(args) 
-{
+const clientConnectHost = defs.clientConnectHost;
+const clientConnect = defs.clientConnectPort;
 
-	var code="DEF";
+let sseq = 0;
+
+function exec(args) {
+	var code = "DEF";
 	if (args && args.length)
-		code=args.shift();
-	var url = "http://"+defs.serverUrl;
+		code = args.shift();
+
+	var url = "http://" + defs.serverUrl;
 	if (args && args.length)
-		url="http://"+args.shift();
-	console.log("Connecting as CLIENT to "+url+" with CODE '"+code+"'");
+		url = "http://" + args.shift();
 	
-	var socket = io.connect(url);
-	var sockets={};
+	console.log("Connecting as CLIENT to " + url + " with CODE '" + code + "'");
 
-	socket.on("error", function(e) {
+	var socket = io.connect(url);
+	var sockets = {};
+
+	socket.on("error", function (e) {
 		console.log("ERROR! " + e);
 	});
 	//--------------------------
-	socket.on("connect_error",function() {
+	socket.on("connect_error", function () {
 		console.log("CONNECT_ERROR!");
 	});
-	socket.on("reconnect_failed",function() {
+	socket.on("reconnect_failed", function () {
 		console.log("RECONNECT FAILED!");
 	});
 	//--------------------------
-	socket.on("wsh-connect",function(data,fn) 
-	{
+	socket.on("wsh-connect", function (data, fn) {
 		function newLocalConnection(onDone) {
-			var client = new net.Socket(); 
+			var client = new net.Socket();
 
-			client.on("error",function(err) {
+			client.on("error", function (err) {
 				debugger;
-				console.error("Socket error : ",err);
-				semit(socket,"client-disconnect",{channel:data.channel});
+				console.error("Socket error : ", err);
+				semit(socket, "client-disconnect", {
+					channel: data.channel
+				});
 			});
 
 			try {
@@ -57,42 +60,46 @@ function exec(args)
 			return client;
 		}
 
-		console.log("wsh-connect(ed) : "+JSON.stringify(data));
-		var channel=data.channel;
-		var csock=newLocalConnection(function() 
-		{
+		console.log("wsh-connect(ed) : " + JSON.stringify(data));
+		var channel = data.channel;
+		var csock = newLocalConnection(function () {
 			console.log('local socket instantiated');
-			csock.channel=channel;
-			sockets[data.channel]=csock;
-			csock.on("data",function(data) 
-			{					
+			csock.channel = channel;
+			sockets[data.channel] = csock;
+			csock.on("data", function (data) {
 				if (!csock.__data) {
-					csock.__data=data;
+					csock.__data = data;
 				} else {
-					csock.__data=Buffer.concat([csock.__data, data]);
+					csock.__data = Buffer.concat([csock.__data, data]);
 				}
 				if (csock.__data.length > BUFFER_SIZE)
 					csock.pause();
 				if (!csock.__working) {
-					csock.__working=true;
+					csock.__working = true;
 					oneData();
 				}
+
 				function oneData() {
 					var d = csock.__data;
 					delete csock.__data;
-					semit(socket,"client-data",{data:d,channel:channel},function() {							
+					semit(socket, "client-data", {
+						data: d,
+						channel: channel
+					}, function () {
 						if (!csock.__data) {
-							csock.__working=false;
+							csock.__working = false;
 							csock.resume();
-						} else 
+						} else
 							oneData();
 					});
 				}
 			});
 
-			csock.on("close",function() {
+			csock.on("close", function () {
 				if (sockets[data.channel]) {
-					semit(socket,"client-disconnect",{channel:channel});
+					semit(socket, "client-disconnect", {
+						channel: channel
+					});
 					delete sockets[channel];
 				}
 			});
@@ -100,10 +107,10 @@ function exec(args)
 			fn();
 		});
 	});
-	socket.on("wsh-disconnect",function(data,fn) {
+	socket.on("wsh-disconnect", function (data, fn) {
 		try {
 			var s = sockets[data.channel];
-			if (!s) 
+			if (!s)
 				return;
 			delete sockets[data.channel];
 			s.destroy();
@@ -111,30 +118,29 @@ function exec(args)
 			fn();
 		}
 	});
-	socket.on("wsh-data",function(data,fn) {
+	socket.on("wsh-data", function (data, fn) {
 		//console.log(data.seq+": wsh-data : "+data.data.length);
-		try 
-		{
+		try {
 			var s = sockets[data.channel];
 			if (!s)
 				return;
 			if (!s._data) {
-				s._data=data.data;
+				s._data = data.data;
 			} else {
-				s._data=Buffer.concat([s._data, data.data]);
+				s._data = Buffer.concat([s._data, data.data]);
 			}
 			if (!s._working) {
-				s._working=true;
+				s._working = true;
 				oneData();
 			}
-			function oneData() 
-			{
+
+			function oneData() {
 				var d = s._data;
 				delete s._data;
-				s.write(d,function() {
+				s.write(d, function () {
 					if (!s._data) {
-						s._working=false;
-					} else 
+						s._working = false;
+					} else
 						oneData();
 				});
 			}
@@ -143,30 +149,34 @@ function exec(args)
 		}
 	});
 	//--------------------------------
-	socket.on("connect",function() {
+	socket.on("connect", function () {
 		console.log(">> SOCKET CONNECT!!!")
-		semit(socket,"client-register",{code:code},function() {
-		  console.log('>> REGISTER CONFIRM');   
-//		debugger;
-	  });
-/*
-			setInterval(function() {
-				try {
-						semit(socket, "client-ping", {code:code}, function () {} );
-				} catch(e) { console.log(e); }
-	  	}, 2000);
-*/
+		semit(socket, "client-register", {
+			code: code
+		}, function () {
+			console.log('>> REGISTERED @ SERVER');
+
+			if (defs.keepAlive) {
+				setInterval(function() {
+					try {
+						semit(socket, "client-ping", {code:code, time: (new Date()).getTime()}, function () {
+							console.log(">> PING/PONG");
+						} );
+					} catch(e) { console.log(e); }
+				}, defs.keepAlive *1000);
+			}
+		});
 	});
 	//--------------------------------
-	socket.on("disconnect",function() {
+	socket.on("disconnect", function () {
 		console.log(">> SOCKET DISCONNECT!!!")
 		for (var i in sockets) {
 			var s = sockets[i];
 			s.destroy();
 		}
-		sockets={};
+		sockets = {};
 		delete socket._queue; //process-sync.js
 		delete socket.queue; // seralize-socket.js
 	});
 }
-exports.exec=exec;
+exports.exec = exec;
