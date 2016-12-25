@@ -149,6 +149,8 @@ function exec(args) {
 		}
 	});
 	//--------------------------------
+	let ivping;
+
 	socket.on("connect", function () {
 		console.log(">> SOCKET CONNECT!!!")
 		semit(socket, "client-register", {
@@ -156,11 +158,11 @@ function exec(args) {
 		}, function () {
 			console.log('>> REGISTERED @ SERVER');
 
-			if (defs.keepAlive) {
-				setInterval(function() {
+			if (defs.keepAlive && !ivping) {
+				ivping = setInterval(function() {
 					try {
 						semit(socket, "client-ping", {code:code, time: (new Date()).getTime()}, function () {
-							console.log(">> PING/PONG");
+							console.log(">> PING/PONG " + (new Date()) );
 						} );
 					} catch(e) { console.log(e); }
 				}, defs.keepAlive *1000);
@@ -169,7 +171,9 @@ function exec(args) {
 	});
 	//--------------------------------
 	socket.on("disconnect", function () {
-		console.log(">> SOCKET DISCONNECT!!!")
+		console.log(">> SOCKET DISCONNECT!!!");
+		clearInterval(ivping); ivping = undefined;
+
 		for (var i in sockets) {
 			var s = sockets[i];
 			s.destroy();
