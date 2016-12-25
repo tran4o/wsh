@@ -22,7 +22,7 @@ function exec(args) {
 	var url = "http://" + defs.serverUrl;
 	if (args && args.length)
 		url = "http://" + args.shift();
-	
+
 	console.log("Connecting as CLIENT to " + url + " with CODE '" + code + "'");
 
 	var socket = io.connect(url);
@@ -159,20 +159,26 @@ function exec(args) {
 			console.log('>> REGISTERED @ SERVER');
 
 			if (defs.keepAlive && !ivping) {
-				ivping = setInterval(function() {
+				ivping = setInterval(function () {
 					try {
-						semit(socket, "client-ping", {code:code, time: (new Date()).getTime()}, function () {
-							console.log(">> PING/PONG " + (new Date()) );
-						} );
-					} catch(e) { console.log(e); }
-				}, defs.keepAlive *1000);
+						semit(socket, "client-ping", {
+							code: code,
+							time: (new Date()).getTime()
+						}, function () {
+							console.log(">> PING/PONG " + (new Date()));
+						});
+					} catch (e) {
+						console.log(e);
+					}
+				}, defs.keepAlive * 1000);
 			}
 		});
 	});
 	//--------------------------------
 	socket.on("disconnect", function () {
 		console.log(">> SOCKET DISCONNECT!!!");
-		clearInterval(ivping); ivping = undefined;
+		clearInterval(ivping);
+		ivping = undefined;
 
 		for (var i in sockets) {
 			var s = sockets[i];

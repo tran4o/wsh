@@ -13,7 +13,9 @@ var freeport = require("freeport");
 var args = [];
 var options = {};
 var t = process.argv.slice(2);
+
 exports.originalArgv = process.argv.slice(); 
+
 while (t.length) 
 {
 	var e = t.shift();
@@ -21,7 +23,23 @@ while (t.length)
 }
 exports.options=options;
 exports.args=args;
+
 //----------------------------
+
+const log4node = require('log4node');
+const logdir = `${__dirname}/../log/`;
+
+try { 
+	fs.mkdir(logdir, function() { 
+		let logf = new log4node.Log4Node({level: 'info', file: logdir + '/wsh-server.log'});
+		let logc = console.log;
+		console.log = l => { logc(l); logf.info(l) };
+		console.log("== wsh session start ==");
+	});
+} catch (e) { console.log("logdir exists. good"); };
+
+//----------------------------
+
 function usage() {
 	console.log("USAGE : ");
 	console.log("wsh server [port DEF "+defs.serverListenPort+"]");
