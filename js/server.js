@@ -10,7 +10,7 @@ const fs = require("fs");
 var extev;
 
 try {
-	extev = require('./external-events');
+	extev = require('./server-events');
 	console.log(`${Object.keys(extev).length} events registered`);
 } catch (err) {
 	console.log("no external events defined: " + err);

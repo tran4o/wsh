@@ -1,4 +1,4 @@
-var BUFFER_SIZE = 1024 * 1024 * 4; // 4 MB
+const BUFFER_SIZE = 1024 * 1024 * 4; // 4 MB
 
 var express = require('express');
 var bodyParser = require('body-parser');
@@ -11,6 +11,19 @@ var net = require("net");
 
 const clientConnectHost = defs.clientConnectHost;
 const clientConnect = defs.clientConnectPort;
+
+////////////////////////////////////////////////////////////////
+
+let extev;
+
+try {
+	extev = require('./client-events');
+	console.log(`${Object.keys(extev).length} events registered`);
+} catch (err) {
+	console.log("no external events defined: " + err);
+}
+
+////////////////////////////////////////////////////////////////
 
 let sseq = 0;
 
@@ -27,6 +40,7 @@ function exec(args) {
 
 	var socket = io.connect(url);
 	var sockets = {};
+	socket.semit = semit.bind(undefined, socket);
 
 	socket.on("error", function (e) {
 		console.log("ERROR! " + e);
@@ -158,20 +172,9 @@ function exec(args) {
 		}, function () {
 			console.log('>> REGISTERED @ SERVER');
 
-			if (defs.keepAlive && !ivping) {
-				ivping = setInterval(function () {
-					try {
-						semit(socket, "client-ping", {
-							code: code,
-							time: (new Date()).getTime()
-						}, function () {
-							console.log(">> PING/PONG " + (new Date()));
-						});
-					} catch (e) {
-						console.log(e);
-					}
-				}, defs.keepAlive * 1000);
-			}
+			if (extev && extev.events['client-registered']) {
+				extev.events['client-registered'](socket, code);
+			}			
 		});
 	});
 	//--------------------------------
